@@ -1,4 +1,5 @@
 import axios from "axios";
+import holidays from "./holidays";
 
 var Interval;
 var holiday;
@@ -20,8 +21,14 @@ var getGuid = () => {
   });
 }
 var getHoliday = () => {
-  let url = "http://x2rr.github.io/funds/holiday.json";
-  return axios.get(url);
+  // let url = "http://x2rr.github.io/funds/holiday.json";
+  // return axios.get(url);
+
+  return new Promise(function(resolve, reject) {
+    resolve(holidays);
+  });
+
+  // return holidays;
 };
 var checkHoliday = date => {
   var nowMonth = date.getMonth() + 1;
@@ -373,7 +380,7 @@ var getData = () => {
   });
 }
 
-getData();
+// getData();
 
 chrome.contextMenus.create({
   title: "以独立窗口模式打开",
@@ -407,10 +414,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     holiday = request.data;
   }
   if (request.type == "refreshBadgeAllGains") {
+    //所有价值 约等于账户余额
     let allAmount = 0;
+    //日持有收益
     let allGains = 0;
     let sumNum = 0;
     request.data.forEach((val) => {
+      //val
+      //ACCNAV: "1.6612"
+      // CHANGERATIO: "--"
+      // FCODE: "001618"
+      // GSZ: "1.661"
+      // GSZZL: "0.40"
+      // GZTIME: "2021-08-12 15:00"
+      // HQDATE: "--"
+      // ISHAVEREDPACKET: false
+      // NAV: "1.6612"
+      // NAVCHGRT: "0.41"
+      // NEWPRICE: "--"
+      // PDATE: "2021-08-12"
+      // SHORTNAME: "天弘中证电子ETF联接C"
+      // ZJL: "--"
       let slt = fundListM.filter(
         (item) => item.code == val.FCODE
       );
@@ -419,6 +443,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       allAmount += NAV * num;
       var sum = 0;
       if (val.PDATE != "--" && val.PDATE == val.GZTIME.substr(0, 10)) {
+        // NAVCHGRT 净值涨跌 0.41
         let NAVCHGRT = isNaN(val.NAVCHGRT) ? 0 : val.NAVCHGRT;
         sum = (NAV - NAV / (1 + NAVCHGRT * 0.01)) * num
       } else {
@@ -433,6 +458,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
     let textStr = null;
     if (BadgeType == 1) {
+      //日收益率
       if (allAmount == 0 || allGains == 0) {
         textStr = "0"
         sumNum = "0"
@@ -442,6 +468,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
 
     } else {
+      //日收益额
       textStr = formatNum(allGains);
       sumNum = allGains;
     }

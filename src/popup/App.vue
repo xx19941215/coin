@@ -29,7 +29,7 @@
           @dragend="handleDragEnd($event, el)"
         >
           <h5>
-            {{ el.f14 }}
+            {{ el.code.toUpperCase() }}
             <span
               v-if="isEdit"
               @click="dltIndFund(index)"
@@ -37,8 +37,8 @@
               >✖</span
             >
           </h5>
-          <p :class="el.f3 >= 0 ? 'up' : 'down'">
-            {{ el.f2
+          <p :class="el.gsz >= 0 ? 'up' : 'down'">
+            {{ el.gsz
             }}<input
               v-if="isEdit && BadgeContent == 3"
               @click="sltInd(el)"
@@ -49,8 +49,8 @@
               type="button"
             />
           </p>
-          <p :class="el.f3 >= 0 ? 'up' : 'down'">
-            {{ el.f4 }}&nbsp;&nbsp;{{ el.f3 }}%
+          <p :class="el.gszzl >= 0 ? 'up' : 'down'">
+            {{ (el.gsz - el.open).toFixed(6) }}&nbsp;&nbsp;{{ el.gszzl }}%
           </p>
         </div>
         <div v-if="isEdit && indFundData.length < 4" class="tab-col">
@@ -91,7 +91,7 @@
         </div>
       </div>
       <div v-if="isEdit" class="input-row">
-        <span>添加新基金:</span>
+        <span>添加新币:</span>
         <!-- <input v-model="fundcode" class="btn" type="text" placeholder="请输入基金代码" /> -->
         <el-select
           v-model="fundcode"
@@ -102,7 +102,7 @@
           size="mini"
           reserve-keyword
           @visible-change="selectChange"
-          placeholder="请输入基金编码，支持按名称或编码搜索"
+          placeholder="请输入代币英文缩写"
           :remote-method="remoteMethod"
           :loading="loading"
           style="width:300px"
@@ -122,9 +122,9 @@
         </el-select>
         <input @click="save" class="btn" type="button" value="确定" />
       </div>
-      <p v-if="isEdit" class="tips center">
+      <!-- <p v-if="isEdit" class="tips center">
         部分新发基金或QDII基金可以搜索到，但可能无法获取估值情况
-      </p>
+      </p> -->
       <div
         v-if="isGetStorage"
         v-loading="loadingList"
@@ -137,9 +137,18 @@
         <table :class="tableHeight">
           <thead>
             <tr>
-              <th class="align-left">基金名称（{{ dataList.length }}）</th>
-              <th v-if="isEdit">基金代码</th>
-              <th v-if="showGSZ && !isEdit">估算净值</th>
+              <th class="align-left">代币（{{ dataCoinList.length }}）</th>
+              <th v-if="isEdit">代币代码</th>
+              <th
+               v-if="showGSZ && !isEdit"
+               @click="sortList('gsz')"
+               class="pointer"
+               >最新价</th>
+              <th
+               v-if="showKPJ && !isEdit"
+               @click="sortList('open')"
+               class="pointer"
+               >开盘价</th>
               <th
                 style="text-align:center"
                 v-if="isEdit && (showCostRate || showCost)"
@@ -147,7 +156,7 @@
                 成本价
               </th>
               <th @click="sortList('amount')" v-if="showAmount" class="pointer">
-                持有额
+                持有价值
                 <span :class="sortType.amount" class="down-arrow"></span>
               </th>
               <th
@@ -174,7 +183,6 @@
                 估算收益
                 <span :class="sortType.gains" class="down-arrow"></span>
               </th>
-              <th v-if="!isEdit">更新时间</th>
               <th
                 style="text-align:center"
                 v-if="
@@ -182,7 +190,7 @@
                     (showAmount || showGains || showCost || showCostRate)
                 "
               >
-                持有份额
+                持有数量
               </th>
               <th v-if="isEdit && BadgeContent == 1">特别关注</th>
               <th v-if="isEdit">删除</th>
@@ -190,7 +198,7 @@
           </thead>
           <tbody>
             <tr
-              v-for="(el, index) in dataList"
+              v-for="(el, index) in dataCoinList"
               :key="el.fundcode"
               :draggable="isEdit"
               :class="drag"
@@ -203,17 +211,18 @@
                 :class="
                   isEdit ? 'fundName-noclick align-left' : 'fundName align-left'
                 "
-                :title="el.name"
+                :title="el.code"
                 @click.stop="!isEdit && fundDetail(el)"
               >
-                <span class="hasReplace-tip" v-if="el.hasReplace">✔</span>{{ el.name }}
+                <span class="hasReplace-tip" v-if="el.hasReplace">✔</span>{{ el.code }}
               </td>
               <td v-if="isEdit">{{ el.fundcode }}</td>
               <td v-if="showGSZ && !isEdit">{{ el.gsz }}</td>
+              <td v-if="showKPJ && !isEdit">{{ el.open }}</td>
               <td v-if="isEdit && (showCostRate || showCost)">
                 <input
                   class="btn num"
-                  placeholder="持仓成本价"
+                  placeholder="成本价"
                   v-model="el.cost"
                   @input="changeCost(el, index)"
                   type="text"
@@ -249,9 +258,9 @@
                 }}
               </td>
               <td v-if="!isEdit">
-                {{
+                <!-- {{
                   el.hasReplace ? el.gztime.substr(5, 5) : el.gztime.substr(10)
-                }}
+                }} -->
                 
               </td>
               <th
@@ -280,7 +289,7 @@
               </td>
               <td v-if="isEdit">
                 <input
-                  @click="dlt(el.fundcode)"
+                  @click="dlt(el.code)"
                   class="btn red edit"
                   value="✖"
                   type="button"
@@ -289,68 +298,6 @@
             </tr>
           </tbody>
         </table>
-
-        <!-- <table :class="tableHeight" class="detailTable">
-          <thead>
-            <tr>
-              <th class="align-left">
-                <div>基金名称</div>
-                <p>基金编码</p>
-              </th>
-              <th>
-                <div>持有收益率</div>
-                <p>持有收益</p>
-              </th>
-              <th>
-                <div>估算涨幅</div>
-                <p>估算收益</p>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="(el, index) in dataList"
-              :key="el.fundcode"
-              :draggable="isEdit"
-              :class="drag"
-              @dragstart="handleDragStart($event, el)"
-              @dragover.prevent="handleDragOver($event, el)"
-              @dragenter="handleDragEnter($event, el, index)"
-              @dragend="handleDragEnd($event, el)"
-            >
-              <td
-                :class="
-                  isEdit ? 'fundName-noclick align-left' : 'fundName align-left'
-                "
-                :title="el.name"
-                @click.stop="!isEdit && fundDetail(el)"
-              >
-                <div>{{ el.name }}</div>
-                <p>{{ el.fundcode }}</p>
-              </td>
-              <td :class="el.costGains >= 0 ? 'up' : 'down'">
-                <div>{{ el.cost > 0 ? el.costGainsRate + "%" : "" }}</div>
-                <p>
-                  {{
-                  parseFloat(el.costGains).toLocaleString("zh", {
-                    minimumFractionDigits: 2,
-                  })
-                }}
-                </p>
-              </td>
-              <td :class="el.gszzl >= 0 ? 'up' : 'down'">
-                <div>{{ el.gszzl }}%</div>
-                <p>
-                  {{
-                    parseFloat(el.gains).toLocaleString("zh", {
-                      minimumFractionDigits: 2,
-                    })
-                  }}
-                </p>
-              </td>
-            </tr>
-          </tbody>
-        </table> -->
       </div>
     </div>
     <p v-if="isEdit" class="tips">
@@ -398,7 +345,7 @@
         "
         @click="changeLiveUpdate"
       />
-      <input class="btn" v-if="!isDuringDate" type="button" value="休市中" />
+      <!-- <input class="btn" v-if="!isDuringDate" type="button" value="休市中" /> -->
       <input
         class="btn"
         type="button"
@@ -489,11 +436,58 @@ import indDetail from "../common/indDetail";
 import fundDetail from "../common/fundDetail";
 import changeLog from "../common/changeLog";
 import market from "../common/market";
+import NP from "number-precision";
+import pako from "pako";
+
 //防抖
 let timeout = null;
 function debounce(fn, wait = 700) {
   if (timeout !== null) clearTimeout(timeout);
   timeout = setTimeout(fn, wait);
+}
+
+function throttle(fn, timeout) {
+  /* 核心技术介绍
+      1. 函数节流需要使用变量来存储  上一次触发时间
+      2. 这个变量如果是局部变量 ： 则函数完毕会被回收。 如果是全局变量：则会造成全局变量污染
+      3.解决方案 ： 利用函数本身也是对象，使用函数本身的静态成员来存储 上一次触发时间
+      */
+  // 给throttle添加静态成员lastTime
+  if (!throttle.lastTime) {
+    /* 为什么一定要有这一步呢？
+            因为函数对象的属性不存在时，默认取值会得到undefined，而undefined在做数学计算
+            的时候会转成number类型得到NaN. Number(undefined) 结果是NaN。无法计算
+             */
+    throttle.lastTime = 0;
+  }
+
+  // 1.记录当前时间
+  const currentTime = new Date().getTime();
+  // 2.判断触发时间间隔
+  if (currentTime - throttle.lastTime > timeout) {
+    fn();
+    // 3.将当前时间作为 下一次触发时间 参考时间
+    throttle.lastTime = currentTime;
+  }
+}
+
+/*
+ * 根据关键字搜索
+ * @param list { Array } 原数组
+ * @param keyWord { String } 查询的关键词
+ * @returns {[]} 匹配的结果
+ */
+function searchByKeyword(list, keyWord) {
+  const reg = new RegExp(keyWord);
+  const arr = [];
+
+  for (let i = 0; i < list.length; i++) {
+    if (reg.test(list[i])) {
+      arr.push(list[i]);
+    }
+  }
+
+  return arr;
 }
 
 export default {
@@ -515,6 +509,7 @@ export default {
       RealtimeFundcode: null,
       RealtimeIndcode: null,
       dataList: [],
+      dataCoinList: [],
       dataListDft: [],
       myVar: null,
       myVar1: null,
@@ -525,8 +520,11 @@ export default {
       showCost: false,
       showCostRate: false,
       showGSZ: false,
+      showKPJ: true,
       fundList: ["001618"],
+      coinList: ["btc", "doge"],
       fundListM: [],
+      coinListM: [],
       sortType: {
         gszzl: "none",
         amount: "none",
@@ -544,47 +542,43 @@ export default {
       loading: false,
       dragging: null,
       showAddSeciInput: false,
-      seciList: ["1.000001", "1.000300", "0.399001", "0.399006"],
+      seciList: ["btc", "eth", "doge"],
       allSeciList: [
         {
-          value: "1.000001",
-          label: "上证指数",
+          value: "btc",
+          label: "BTC",
         },
         {
-          value: "1.000300",
-          label: "沪深300",
+          value: "eth",
+          label: "ETH",
         },
         {
-          value: "0.399001",
-          label: "深证成指",
+          value: "ada",
+          label: "ADA",
         },
         {
-          value: "1.000688",
-          label: "科创50",
+          value: "xrp",
+          label: "XRP",
         },
         {
-          value: "0.399006",
-          label: "创业板指",
+          value: "doge",
+          label: "DOGE",
         },
         {
-          value: "0.399005",
-          label: "中小板指",
+          value: "pot",
+          label: "POT",
         },
         {
-          value: "100.HSI",
-          label: "恒生指数",
+          value: "uni",
+          label: "UNI",
         },
         {
-          value: "100.DJIA",
-          label: "道琼斯",
+          value: "bch",
+          label: "BCH",
         },
         {
-          value: "100.NDX",
-          label: "纳斯达克",
-        },
-        {
-          value: "100.SPX",
-          label: "标普500",
+          value: "sol",
+          label: "SOL",
         },
       ],
       sltSeci: "",
@@ -602,7 +596,7 @@ export default {
       showBadge: 1,
       userId: null,
       loadingInd: false,
-      loadingList: true,
+      loadingList: false,
       isGetStorage: false,
       zoom: {
         zoom: 1,
@@ -613,6 +607,13 @@ export default {
       opacityValue: 0,
       isRefresh: false,
       marketShadow: false,
+      allCoinList: [],
+      //socket
+      dataPool: {}, // 数据缓冲池
+      wsUrl: "wss://api-aws.huobi.pro/ws",
+      lockReconnect: false, // 连接失败不进行重连
+      maxReconnect: 5, // 最大重连次数，若连接失败
+      socket: null, // websocket实例
     };
   },
   mounted() {
@@ -625,13 +626,14 @@ export default {
         };
       }
     }, 10);
-    this.init();
+    // this.init();
+    this.initCoin();
   },
   computed: {
     allGains() {
       let allGains = 0;
       let allNum = 0;
-      this.dataList.forEach((val) => {
+      this.dataCoinList.forEach((val) => {
         allGains += parseFloat(val.gains);
         allNum += parseFloat(val.amount);
       });
@@ -642,7 +644,7 @@ export default {
     allCostGains() {
       let allCostGains = 0;
       let allNum = 0;
-      this.dataList.forEach((val) => {
+      this.dataCoinList.forEach((val) => {
         allCostGains += parseFloat(val.costGains);
         allNum += parseFloat(val.amount);
       });
@@ -724,11 +726,12 @@ export default {
   },
   methods: {
     refresh() {
-      this.init();
-      this.isRefresh = true;
-      setTimeout(() => {
-        this.isRefresh = false;
-      }, 1500);
+      this.initCoin();
+      this.isRefresh = false;
+      // console.log(this.isRefresh);
+      // setTimeout(() => {
+        // this.isRefresh = false;
+      // }, 1500);
     },
     formatTooltip(val) {
       return val + "%";
@@ -837,6 +840,149 @@ export default {
         }
       );
     },
+    initCoin() {
+      chrome.storage.sync.get(
+        [
+          "RealtimeFundcode",
+          "RealtimeIndcode",
+          "fundListM",
+          "coinListM",
+          "showAmount",
+          "showGains",
+          "fundList",
+          "coinList",
+          "seciList",
+          "darkMode",
+          "normalFontSize",
+          "isLiveUpdate",
+          "showCost",
+          "showCostRate",
+          "showGSZ",
+          "version",
+          "showBadge",
+          "BadgeContent",
+          "userId",
+          "grayscaleValue",
+          "opacityValue",
+          "sortTypeObj",
+        ],
+        (res) => {
+          this.coinList = res.coinList ? res.coinList : this.coinList;
+          if (res.coinListM) {
+            this.coinListM = res.coinListM;
+          } else {
+            for (const coin of this.coinList) {
+              let val = {
+                code: coin,
+                num: coin,
+              };
+              this.coinListM.push(val);
+            }
+            chrome.storage.sync.set({
+              coinListM: this.coinListM,
+            });
+          }
+          console.log("coinListM");
+          console.log(this.coinListM);
+          if (res.userId) {
+            this.userId = res.userId;
+          } else {
+            this.userId = this.getGuid();
+            chrome.storage.sync.set({
+              userId: this.userId,
+            });
+          }
+          this.darkMode = res.darkMode ? res.darkMode : false;
+          this.normalFontSize = res.normalFontSize ? res.normalFontSize : false;
+          this.seciList = res.seciList ? res.seciList : this.seciList;
+          this.showAmount = res.showAmount ? res.showAmount : false;
+          this.showGains = res.showGains ? res.showGains : false;
+          this.RealtimeFundcode = res.RealtimeFundcode;
+          this.RealtimeIndcode = res.RealtimeIndcode;
+          this.isLiveUpdate = res.isLiveUpdate ? res.isLiveUpdate : false;
+          this.showCost = res.showCost ? res.showCost : false;
+          this.showCostRate = res.showCostRate ? res.showCostRate : false;
+          this.showGSZ = res.showGSZ ? res.showGSZ : false;
+          this.BadgeContent = res.BadgeContent ? res.BadgeContent : 1;
+          this.showBadge = res.showBadge ? res.showBadge : 1;
+          this.grayscaleValue = res.grayscaleValue ? res.grayscaleValue : 0;
+          this.opacityValue = res.opacityValue ? res.opacityValue : 0;
+          this.sortTypeObj = res.sortTypeObj ? res.sortTypeObj : {};
+
+          // if (this.seciList.length > 0) {
+          //   this.loadingInd = true;
+          // }
+
+          this.grayscale = {
+            filter: "grayscale(" + this.grayscaleValue / 100 + ")",
+          };
+          this.opacity = {
+            opacity: 1 - this.opacityValue / 100,
+          };
+
+          this.isGetStorage = true;
+          // this.getIndFundData();
+
+          const coinList = [];
+          // 组合成table需要的数据格式
+          this.coinListM.forEach(item => {
+            coinList.push({
+              name: item.code,
+              amount: 0,
+              cost: 0,
+              open: 0,
+              close: 0,
+              high: 0,
+              code: item.code,
+              count: 0,
+              low: 0,
+              vol: 0,
+              ups: 0,
+              num: 0,
+              gains: 0,
+              costGains: 0,
+              costGainsRate: 0,
+            });
+          });
+          this.dataCoinList = coinList;
+
+          //组合成Index需要的格式
+          const indexCoinList = [];
+          // 组合成index需要的数据格式
+          console.log("seciList")
+          console.log(this.seciList)
+          this.seciList.forEach(item => {
+            indexCoinList.push({
+              name: item,
+              amount: 0,
+              open: 0,
+              cost: 0,
+              close: 0,
+              high: 0,
+              code: item,
+              count: 0,
+              low: 0,
+              vol: 0,
+              ups: 0,
+              num: 0,
+              gains: 0,
+              costGains: 0,
+              costGainsRate: 0
+            });
+          });
+          this.indFundData = indexCoinList;
+
+
+          this.initWebSocket();
+          // this.checkInterval(true);
+
+          let ver = res.version ? res.version : "1.0.0";
+          if (ver != this.localVersion) {
+            this.changelog();
+          }
+        }
+      );
+    },
     getGuid() {
       return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(
         c
@@ -891,25 +1037,35 @@ export default {
     remoteMethod(query) {
       if (query !== "") {
         this.loading = true;
-        let url =
-          "https://fundsuggest.eastmoney.com/FundSearch/api/FundSearchAPI.ashx?&m=9&key=" +
-          query +
-          "&_=" +
-          new Date().getTime();
-        this.$axios.get(url).then((res) => {
-          this.searchOptions = res.data.Datas.filter((val) => {
-            let hasCode = this.fundListM.some((currentValue, index, array) => {
-              return currentValue.code == val.CODE;
-            });
-            return !hasCode;
-          }).map((val) => {
-            return {
-              value: val.CODE,
-              label: val.NAME,
-            };
-          });
-          this.loading = false;
+        
+        this.searchOptions = searchByKeyword(this.allCoinList.data, query).map((val) => {
+          return {
+            value: val,
+            label: val
+          };
         });
+
+        this.loading = false;
+
+        // let url =
+        //   "https://fundsuggest.eastmoney.com/FundSearch/api/FundSearchAPI.ashx?&m=9&key=" +
+        //   query +
+        //   "&_=" +
+        //   new Date().getTime();
+        // this.$axios.get(url).then((res) => {
+        //   this.searchOptions = res.data.Datas.filter((val) => {
+        //     let hasCode = this.fundListM.some((currentValue, index, array) => {
+        //       return currentValue.code == val.CODE;
+        //     });
+        //     return !hasCode;
+        //   }).map((val) => {
+        //     return {
+        //       value: val.CODE,
+        //       label: val.NAME,
+        //     };
+        //   });
+        //   this.loading = false;
+        // });
       } else {
         this.searchOptions = [];
       }
@@ -947,9 +1103,9 @@ export default {
           ? "none"
           : "desc";
       if (this.sortType[type] == "none") {
-        this.dataList = [...this.dataListDft];
+        this.dataCoinList = [...this.dataCoinListDft];
       } else {
-        this.dataList = this.dataList.sort(
+        this.dataCoinList = this.dataCoinList.sort(
           this.compare(type, this.sortType[type])
         );
       }
@@ -991,24 +1147,44 @@ export default {
     },
     saveSeci() {
       this.seciList.push(this.sltSeci);
+      console.log(this.seciList);
+      this.indFundData.push({
+         name: this.sltSeci,
+         amount: 0,
+         open: 0,
+         close: 0,
+         high: 0,
+         code: this.sltSeci,
+         count: 0,
+         low: 0,
+         vol: 0,
+         ups: 0,
+         gains: 0,
+         costGains: 0,
+         costGainsRate: 0,
+      });
+
       chrome.storage.sync.set(
         {
           seciList: this.seciList,
         },
         () => {
           this.sltSeci = "";
-          this.getIndFundData();
+          // this.getIndFundData();
+          this.initWebSocket();
         }
       );
     },
     dltIndFund(ind) {
-      this.seciList.splice(ind, 1);
+      // this.seciList.splice(ind, 1);
+      this.indFundData.splice(ind, 1);
+      console.log(this.seciList)
       chrome.storage.sync.set(
         {
           seciList: this.seciList,
         },
         () => {
-          this.getIndFundData();
+          this.initWebSocket();
         }
       );
     },
@@ -1103,14 +1279,14 @@ export default {
     },
     changeNum(item, ind) {
       debounce(() => {
-        for (let fund of this.fundListM) {
-          if (fund.code == item.fundcode) {
-            fund.num = item.num;
+        for (let coin of this.coinListM) {
+          if (coin.code == item.code) {
+            coin.num = item.num;
           }
         }
         chrome.storage.sync.set(
           {
-            fundListM: this.fundListM,
+            coinListM: this.coinListM,
           },
           () => {
             item.amount = this.calculateMoney(item);
@@ -1121,16 +1297,135 @@ export default {
         );
       });
     },
+    /**
+     * 更新表格数据
+     * @param res { Object } 币种的更新数据包
+     * @param coinName { String } 币种名称
+     **/
+    updateTableData(res, coinName) {
+      // 更新数据
+      // console.log(this.isRefresh);
+      this.dataCoinList.some(item => {
+        if (item.code === coinName) {
+          const {
+            amount,
+            open,
+            close,
+            high,
+            // id,
+            count,
+            low,
+            vol
+          } = res.tick;
+
+          // data.num = slt[0].num;
+          //   data.cost = slt[0].cost;
+          //   data.amount = this.calculateMoney(data);
+          //   data.gains = this.calculate(data, data.hasReplace);
+          //   data.costGains = this.calculateCost(data);
+          //   data.costGainsRate = this.calculateCostRate(data);
+
+          item.fundcode = coinName;
+          item.open = open;
+          item.gsz = close;
+          item.high = high;
+          item.id = coinName;
+          item.count = count;
+          item.low = low;
+          item.vol = vol;
+          item.badge = this.badgeCoin === coinName;
+          // console.log("更新表格");
+          // console.log(item);
+          // 计算涨跌百分比
+          // 最新价 - 开盘价 / 开盘价 = 涨跌百分比
+          item.gszzl = NP.times(
+            NP.round(NP.divide(NP.minus(close, open), open), 4),
+            100
+          );
+
+          let slt = this.coinListM.filter(
+              (v) => v.code == item.code
+          );
+
+          item.num = slt[0].num;
+          item.cost = slt[0].cost;
+          item.amount = this.calculateMoney(item);
+          item.gains = this.calculate(item, false);
+          item.costGains = this.calculateCost(item);
+          item.costGainsRate = this.calculateCostRate(item);
+
+          return true;
+        }
+        return false;
+      });
+      // console.log(this.dataCoinList);
+      // index小的排到前面
+      this.dataCoinList.sort((a, b) => a.close - b.close);
+    },
+    /**
+     * 更新Index数据
+     * @param res { Object } 币种的更新数据包
+     * @param coinName { String } 币种名称
+     **/
+    updateIndexData(res, coinName) {
+      // 更新数据
+      // console.log(this.isRefresh);
+      this.indFundData.some(item => {
+        if (item.code === coinName) {
+          const {
+            amount,
+            open,
+            close,
+            high,
+            // id,
+            count,
+            low,
+            vol
+          } = res.tick;
+
+          // data.num = slt[0].num;
+          //   data.cost = slt[0].cost;
+          //   data.amount = this.calculateMoney(data);
+          //   data.gains = this.calculate(data, data.hasReplace);
+          //   data.costGains = this.calculateCost(data);
+          //   data.costGainsRate = this.calculateCostRate(data);
+
+          item.fundcode = coinName;
+          item.num = amount;
+          item.open = open;
+          item.gsz = close;
+          item.high = high;
+          item.id = coinName;
+          item.count = count;
+          item.low = low;
+          item.vol = vol;
+          item.badge = this.badgeCoin === coinName;
+          // console.log("更新表格");
+          // console.log(item);
+          // 计算涨跌百分比
+          // 最新价 - 开盘价 / 开盘价 = 涨跌百分比
+          item.gszzl = NP.times(
+            NP.round(NP.divide(NP.minus(close, open), open), 4),
+            100
+          );
+          return true;
+        }
+        return false;
+      });
+      // console.log(this.dataCoinList);
+      // index小的排到前面
+      this.indFundData.sort((a, b) => a.close - b.close);
+    },
     changeCost(item, ind) {
       debounce(() => {
-        for (let fund of this.fundListM) {
-          if (fund.code == item.fundcode) {
-            fund.cost = item.cost;
+        for (let coin of this.coinListM) {
+          if (coin.code == item.code) {
+            coin.cost = item.cost;
           }
         }
         chrome.storage.sync.set(
           {
-            fundListM: this.fundListM,
+            coinListM: this.coinListM,
           },
           () => {
             item.costGains = this.calculateCost(item);
@@ -1140,7 +1435,7 @@ export default {
       });
     },
     calculateMoney(val) {
-      let sum = (val.dwjz * val.num).toFixed(2);
+      let sum = (val.gsz * val.num).toFixed(2);
       return sum;
     },
     calculate(val, hasReplace) {
@@ -1150,14 +1445,14 @@ export default {
         sum = ((val.dwjz - val.dwjz / (1 + val.gszzl * 0.01)) * num).toFixed(2);
       } else {
         if (val.gsz) {
-          sum = ((val.gsz - val.dwjz) * num).toFixed(2);
+          sum = ((val.gsz - val.open) * num).toFixed(2);
         }
       }
       return sum;
     },
     calculateCost(val) {
       if (val.cost) {
-        let sum = ((val.dwjz - val.cost) * val.num).toFixed(2);
+        let sum = ((val.gsz - val.cost) * val.num).toFixed(2);
         return sum;
       } else {
         return 0;
@@ -1165,7 +1460,7 @@ export default {
     },
     calculateCostRate(val) {
       if (val.cost && val.cost != 0) {
-        let sum = (((val.dwjz - val.cost) / val.cost) * 100).toFixed(2);
+        let sum = (((val.gsz - val.cost) / val.cost) * 100).toFixed(2);
         return sum;
       } else {
         return 0;
@@ -1173,16 +1468,27 @@ export default {
     },
     save() {
       this.fundcode.forEach((code) => {
-        let val = {
-          code: code,
-          num: 0,
-        };
-        this.fundListM.push(val);
+        let val =  {
+              name: code,
+              amount: 0,
+              open: 0,
+              close: 0,
+              high: 0,
+              code: code,
+              count: 0,
+              low: 0,
+              cost: 0,
+              vol: 0,
+              ups: 0,
+        }
+        // this.fundListM.push(val);
+        this.coinListM.push(val);
       });
 
+      console.log(this.coinListM)
       chrome.storage.sync.set(
         {
-          fundListM: this.fundListM,
+          coinListM: this.coinListM,
         },
         () => {
           this.fundcode = [];
@@ -1190,6 +1496,7 @@ export default {
           chrome.runtime.sendMessage({ type: "refresh" });
         }
       );
+      this.initCoin();
     },
     sltInd(val) {
       let code = val.f13 + "." + val.f12;
@@ -1239,7 +1546,7 @@ export default {
       }
     },
     dlt(id) {
-      this.fundListM = this.fundListM.filter(function(ele) {
+      this.coinListM = this.coinListM.filter(function(ele) {
         return ele.code != id;
       });
 
@@ -1258,11 +1565,11 @@ export default {
       }
       chrome.storage.sync.set(
         {
-          fundListM: this.fundListM,
+          coinListM: this.coinListM,
         },
         () => {
-          this.dataList = this.dataList.filter(function(ele) {
-            return ele.fundcode != id;
+          this.dataCoinList = this.dataCoinList.filter(function(ele) {
+            return ele.code != id;
           });
           if (this.BadgeContent == 2) {
             chrome.runtime.sendMessage({ type: "refresh" });
@@ -1347,6 +1654,136 @@ export default {
         this.indFundData = newIndDataItems;
       }
     },
+    getAllCoinList() {
+      let url = "https://api.huobi.pro/v1/common/currencys";
+
+     this.$axios
+        .get(url)
+        .then((res) => {
+          this.allCoinList = res.data;
+         })
+    },
+    // 初始化websocket
+    initWebSocket() {
+      try {
+        if ("WebSocket" in window) {
+          this.loading = true;
+          this.socket = new WebSocket(this.wsUrl);
+        } else {
+          console.log("您的浏览器不支持websocket");
+        }
+        this.socket.onopen = this.websocketOnOpen;
+        this.socket.onerror = this.websocketOnError;
+        this.socket.onmessage = this.websocketOnMessage;
+        this.socket.onclose = this.websocketClose;
+      } catch (e) {
+        // this.loading = false;
+        this.reconnect();
+      }
+    },
+    websocketOnOpen() {
+      // this.loading = false;
+      console.log("WebSocket连接成功", this.socket.readyState);
+      // 循环订阅每个币种的主题消息d
+      if (this.socket && this.coinListM.length) {
+        // console.log(this.coinListM);
+        //列表
+        this.coinListM.forEach(item => {
+          this.getKline(item.code);
+        });
+        //页头
+        this.seciList.forEach(item => {
+          this.getKline(item);
+        });
+      }
+    },
+    websocketOnError(e) {
+      console.log("WebSocket连接发生错误：", e);
+      this.reconnect();
+    },
+    // 接收数据并处理
+    websocketOnMessage(e) {
+      this.loading = false;
+      this.blob2json(e.data, res => {
+        // console.log("接收到的数据：", res);
+        if (res.ping) {
+          // 回应心跳包
+          this.socket.send(JSON.stringify(res));
+        }
+        if (res.ch) {
+          // 解析币种
+          const coinName = res.ch.split(".")[1].split("usdt")[0];
+          // 数据缓存到池子中
+          this.dataPool[coinName] = res;
+          // 初始化时立即更新一次
+          // const coinItem = this.coinListM.filter(
+          //   item => item.code === coinName
+          // )[0];
+          // if (!coinItem.close) {
+          //   console.log("初始化更新", coinName);
+          //   this.updateTableData(res, coinName);
+          // }
+          // 节流 限制1000ms内统一批量更新一次。
+          throttle(() => {
+            // console.log("批量更新数据");
+             Object.keys(this.dataPool).forEach(item => {
+               this.updateTableData(this.dataPool[item], item);
+               this.updateIndexData(this.dataPool[item], item);
+             });
+          }, 1000);
+        }
+      });
+    },
+    websocketClose(e) {
+      console.log("connection closed:", e);
+      this.reconnect();
+    },
+     reconnect() {
+      console.log("尝试重连");
+      if (this.lockReconnect || this.maxReconnect <= 0) {
+        return;
+      }
+      setTimeout(() => {
+        // this.maxReconnect-- // 不做限制 连不上一直重连
+        this.initWebSocket();
+      }, 10 * 1000);
+    },
+    /**
+     * 获取K线行情数据
+     * API: https://huobiapi.github.io/docs/spot/v1/cn/#k-2
+     * @param coin { String } 自选币种名称
+     * @param period { String } K线周期	1min, 5min, 15min, 30min, 60min, 4hour, 1day, 1mon, 1week, 1year
+     */
+    getKline(coin, period = "1day") {
+      //
+      let data = {
+        sub: `market.${coin}usdt.kline.${period}`,
+        id: "id1"
+      };
+
+      this.socket.send(JSON.stringify(data));
+    },
+    /**
+     * 解压websocket返回的数据
+     * @param e { Object } 返回的数据
+     * @param callback { Function } 回调函数
+     */
+    blob2json(e, callback) {
+      let reader = new FileReader();
+      reader.readAsArrayBuffer(e, "utf-8");
+      reader.onload = function() {
+        // console.log("blob转ArrayBuffer数据类型", reader.result);
+        // 对数据进行解压
+        let msg = pako.ungzip(reader.result, {
+          to: "string"
+        });
+        // console.log("ArrayBuffer转字符串", msg);
+        callback && callback(JSON.parse(msg));
+      };
+    },
+  },
+  created() {
+    this.getAllCoinList();
   },
 };
 </script>
