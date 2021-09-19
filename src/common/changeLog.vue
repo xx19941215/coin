@@ -28,16 +28,16 @@
         电报交流群：<a target="_Blank" :href="changelog.tgGroup">点击跳转</a>
       </p>
       <div class="qrcode-row">
-        <div class="qrcode-list">
+        <!-- <div class="qrcode-list">
           <p>微信群二维码</p>
           <div ref="qrcode" id="qrcode"></div>
-        </div>
-        <!-- <div class="qrcode-list">
-          <p>小程序二维码</p>
+        </div> -->
+        <div class="qrcode-list">
+          <p>联系客服进入微信交流群</p>
           <div class="mpcode">
             <img :src="'./../icons/qrcode/mp.jpg'" />
           </div>
-        </div> -->
+        </div>
       </div>
 
       <p v-if="changelog.tip">{{ changelog.tip }}</p>
@@ -88,8 +88,8 @@ export default {
   data() {
     return {
       updateurl: {
-        github: "https://x2rr.github.io/funds/src/common/changeLog.json",
-        gitee: "https://rabt.gitee.io/funds/src/common/changeLog.json",
+        github: "https://coin.xiaoxiao.work/src/common/changeLog.json",
+        gitee: "https://coin.xiaoxiao.work/src/common/changeLog.json",
       },
       centerDialogVisible: false,
       qrcode: false,
@@ -113,7 +113,7 @@ export default {
           this.loading = false;
           this.qrlink = res.data.qrcode;
           this.changelog = res.data;
-          this.setQrcode();
+          // this.setQrcode();
         })
         .catch((error) => {
           this.netError = true;
@@ -133,10 +133,10 @@ export default {
     },
 
     close() {
-      if (this.qrcode) {
-        this.qrcode.clear();
-      }
-      this.$refs.qrcode.innerHTML = null;
+      // if (this.qrcode) {
+      //   this.qrcode.clear();
+      // }
+      // this.$refs.qrcode.innerHTML = null;
       this.centerDialogVisible = false;
 
       this.$emit("close", false);

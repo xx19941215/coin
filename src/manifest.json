@@ -6,14 +6,14 @@
   "manifest_version": 2,
   "icons": {
     "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
+    "48": "icons/icon16.png",
     "128": "icons/icon128.png"
   },
   "homepage_url": "http://rabt.gitee.io/funds/docs/dist/index.html",
   "browser_action": {
     "default_icon": {
-      "19": "icons/icon19.png",
-      "38": "icons/icon38.png"
+      "19": "icons/icon16.png",
+      "38": "icons/icon16.png"
     },
     "default_title": "实时行情助手火币版",
     "default_popup": "popup/popup.html"
