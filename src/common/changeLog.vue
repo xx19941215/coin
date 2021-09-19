@@ -32,12 +32,12 @@
           <p>微信群二维码</p>
           <div ref="qrcode" id="qrcode"></div>
         </div>
-        <div class="qrcode-list">
+        <!-- <div class="qrcode-list">
           <p>小程序二维码</p>
           <div class="mpcode">
             <img :src="'./../icons/qrcode/mp.jpg'" />
           </div>
-        </div>
+        </div> -->
       </div>
 
       <p v-if="changelog.tip">{{ changelog.tip }}</p>

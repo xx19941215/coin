@@ -35,15 +35,15 @@
       </div>
       <div>单位净值：{{ infoData.DWJZ }}（{{ infoData.FSRQ }}）</div>
       <div>累计净值：{{ infoData.LJJZ }}</div>
-      <div>基金类型：{{ infoData.FTYPE }}</div>
-      <div>基金公司：{{ infoData.JJGS }}</div>
+      <div>代币类型：{{ infoData.FTYPE }}</div>
+      <div>代币公司：{{ infoData.JJGS }}</div>
       <div class="hover" @click="showManager">
-        基金经理：{{ infoData.JJJL }}
+        代币经理：{{ infoData.JJJL }}
       </div>
       <div>交易状态：{{ infoData.SGZT }} {{ infoData.SHZT }}</div>
-      <div>基金规模：{{ numberFormat(infoData.ENDNAV) }}</div>
+      <div>代币规模：{{ numberFormat(infoData.ENDNAV) }}</div>
       <div v-if="infoData.FUNDBONUS">
-        分红状态：{{ infoData.FUNDBONUS.PDATE }}日，每份基金份额折算{{
+        分红状态：{{ infoData.FUNDBONUS.PDATE }}日，每份代币份额折算{{
           infoData.FUNDBONUS.CHGRATIO
         }}份
       </div>

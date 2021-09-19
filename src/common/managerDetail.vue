@@ -10,14 +10,14 @@
         ref="manager"
       >
         <div>
-          <h5>基金经理变动一览</h5>
+          <h5>代币经理变动一览</h5>
           <div class="table-row">
             <table>
               <thead>
                 <tr>
                   <th>起始期</th>
                   <th>截止期</th>
-                  <th>基金经理</th>
+                  <th>代币经理</th>
                   <th>任职期</th>
                   <th>任职涨幅</th>
                 </tr>
@@ -35,7 +35,7 @@
               </tbody>
             </table>
           </div>
-          <h5>现任基金经理简介</h5>
+          <h5>现任代币经理简介</h5>
           <div v-for="el in managerDetail" :key="el.MGRID">
             <div class="manager-info">
               <div class="img-row">

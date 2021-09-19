@@ -6,10 +6,18 @@ var holiday;
 var RealtimeFundcode = null;
 var RealtimeIndcode = null;
 var fundListM = [];
+var seciList = [];
 var showBadge = 1;
 var BadgeContent = 1;
 var BadgeType = 1;
 var userId = null;
+
+var socket = null;
+var wsUrl = "wss://api-aws.huobi.pro/ws";
+var coinListM = [];
+var dataPool = {};
+
+
 
 var getGuid = () => {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (
@@ -83,37 +91,6 @@ var cpr_version = (a, b) => {
   if (_a < _b) console.log("版本号" + b + "是新版本！");
 };
 
-var isDuringDate = () => {
-
-  //时区转换为东8区
-  var zoneOffset = 8;
-  var offset8 = new Date().getTimezoneOffset() * 60 * 1000;
-  var nowDate8 = new Date().getTime();
-  var curDate = new Date(nowDate8 + offset8 + zoneOffset * 60 * 60 * 1000);
-
-  if (checkHoliday(curDate)) {
-    return false;
-  }
-  var beginDateAM = new Date();
-  var endDateAM = new Date();
-  var beginDatePM = new Date();
-  var endDatePM = new Date();
-
-  beginDateAM.setHours(9, 30, 0);
-  endDateAM.setHours(11, 35, 0);
-  beginDatePM.setHours(13, 0, 0);
-  endDatePM.setHours(15, 5, 0);
-  if (curDate.getDay() == "6" || curDate.getDay() == "0") {
-    return false;
-  } else if (curDate >= beginDateAM && curDate <= endDateAM) {
-    return true;
-  } else if (curDate >= beginDatePM && curDate <= endDatePM) {
-    return true;
-  } else {
-    return false;
-  }
-};
-
 var formatNum = val => {
   let num = parseFloat(val);
   let absNum = Math.abs(num);
@@ -137,31 +114,47 @@ var formatNum = val => {
 var setBadge = (fundcode, Realtime, type) => {
   let fundStr = null;
   if (type == 3) {
-    let url =
-      "https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&fields=f3&secids=" +
-      fundcode +
-      "&_=" +
-      new Date().getTime();
-    axios.get(url).then((res) => {
-      let data = res.data.data.diff;
-      let text = data[0].f3.toString();
-      let num = data[0].f3;
+    //单个指数
+    // let url =
+    //   "https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&fields=f3&secids=" +
+    //   fundcode +
+    //   "&_=" +
+    //   new Date().getTime();
+    // axios.get(url).then((res) => {
+    //   let data = res.data.data.diff;
+    //   let text = data[0].f3.toString();
+    //   let num = data[0].f3;
+    //   chrome.browserAction.setBadgeText({
+    //     text: text
+    //   });
+    //   let color = Realtime ?
+    //     num >= 0 ?
+    //     "#F56C6C" :
+    //     "#4eb61b" :
+    //     "#4285f4";
+    //   chrome.browserAction.setBadgeBackgroundColor({
+    //     color: color
+    //   });
+    // });
+      let data = dataPool[RealtimeIndcode];
+      let text = data.close;
+      let num = data.close - data.open;
       chrome.browserAction.setBadgeText({
         text: text
       });
-      let color = Realtime ?
+      let color = 
         num >= 0 ?
         "#F56C6C" :
-        "#4eb61b" :
-        "#4285f4";
+        "#4eb61b";
       chrome.browserAction.setBadgeBackgroundColor({
         color: color
       });
-    });
   } else {
     if (type == 1) {
+      //单个代币
       fundStr = fundcode;
     } else {
+      //所有代币
       fundStr = fundListM.map((val) => val.code).join(",");
     }
 
@@ -176,6 +169,7 @@ var setBadge = (fundcode, Realtime, type) => {
         let textStr = null;
         let sumNum = 0;
         if (type == 1) {
+          //单个代币
           let val = res.data.Datas[0];
           let data = {
             fundcode: val.FCODE,
@@ -214,9 +208,11 @@ var setBadge = (fundcode, Realtime, type) => {
 
 
           if (BadgeType == 1) {
+            //收益率
             textStr = data.gszzl;
             sumNum = textStr;
           } else {
+            //收益额
             if (num != 0) {
               sumNum = sum;
               textStr = formatNum(sum);
@@ -227,6 +223,7 @@ var setBadge = (fundcode, Realtime, type) => {
           }
 
         } else {
+          //所有代币
           res.data.Datas.forEach((val) => {
             let slt = fundListM.filter(
               (item) => item.code == val.FCODE
@@ -248,6 +245,7 @@ var setBadge = (fundcode, Realtime, type) => {
 
           });
           if (BadgeType == 1) {
+            //收益率
             if (allAmount == 0 || allGains == 0) {
               sumNum = "0"
               textStr = "0"
@@ -257,6 +255,7 @@ var setBadge = (fundcode, Realtime, type) => {
             }
 
           } else {
+            //收益额
             sumNum = allGains;
             textStr = formatNum(allGains);
           }
@@ -314,34 +313,40 @@ var endInterval = () => {
 };
 
 var runStart = (RealtimeFundcode, RealtimeIndcode) => {
+  initWebSocket();
 
-  if (showBadge == 1 && BadgeContent == 1) {
-    if (RealtimeFundcode) {
-      startInterval(RealtimeFundcode);
-    } else {
-      endInterval();
-    }
-  } else if (showBadge == 1 && BadgeContent == 2) {
-    startInterval(null, 2);
-  } else if (showBadge == 1 && BadgeContent == 3) {
-    if (RealtimeIndcode) {
-      startInterval(RealtimeIndcode, 3);
-    } else {
-      endInterval();
-    }
+  // if (showBadge == 1 && BadgeContent == 1) {
+  //   if (RealtimeFundcode) {
+  //     startInterval(RealtimeFundcode);
+  //   } else {
+  //     endInterval();
+  //   }
+  // } else if (showBadge == 1 && BadgeContent == 2) {
+  //   startInterval(null, 2);
+  // } else if (showBadge == 1 && BadgeContent == 3) {
+  //   if (RealtimeIndcode) {
+  //     startInterval(RealtimeIndcode, 3);
+  //   } else {
+  //     endInterval();
+  //   }
 
-  } else {
-    endInterval();
-  }
+  // } else {
+  //   endInterval();
+  // }
 
 };
 
 
 var getData = () => {
-  chrome.storage.sync.get(["holiday", "fundListM", "RealtimeFundcode", "RealtimeIndcode", "showBadge", "BadgeContent", "BadgeType", "userId"], res => {
+  console.log("getData");
+  chrome.storage.sync.get(["holiday", "fundListM", "coinListM", "RealtimeFundcode", "RealtimeIndcode", "showBadge", "BadgeContent", "BadgeType", "userId"], res => {
     RealtimeFundcode = res.RealtimeFundcode ? res.RealtimeFundcode : null;
     RealtimeIndcode = res.RealtimeIndcode ? res.RealtimeIndcode : null;
+    console.log("====RealtimeIndcode===")
+    console.log(RealtimeIndcode)
     fundListM = res.fundListM ? res.fundListM : [];
+    coinListM = res.coinListM ? res.coinListM : [];
+    seciList = res.seciList ? res.seciList : [];
     showBadge = res.showBadge ? res.showBadge : 1;
     BadgeContent = res.BadgeContent ? res.BadgeContent : 1;
     BadgeType = res.BadgeType ? res.BadgeType : 1;
@@ -353,33 +358,37 @@ var getData = () => {
         userId: userId,
       });
     }
-    if (res.holiday) {
-      holiday = res.holiday;
-      runStart(RealtimeFundcode, RealtimeIndcode);
-    } else {
-      getHoliday().then(res => {
-        chrome.storage.sync.set({
-            holiday: res.data
-          },
-          () => {
-            holiday = res.data;
-            runStart(RealtimeFundcode, RealtimeIndcode);
-          }
-        );
-      }).catch(err => {
-        chrome.storage.sync.set({
-            holiday: {}
-          },
-          () => {
-            holiday = {};
-            runStart(RealtimeFundcode, RealtimeIndcode);
-          }
-        );
-      });
-    }
+
+    runStart(RealtimeFundcode, RealtimeIndcode);
+
+    // if (res.holiday) {
+    //   holiday = res.holiday;
+    //   runStart(RealtimeFundcode, RealtimeIndcode);
+    // } else {
+    //   getHoliday().then(res => {
+    //     chrome.storage.sync.set({
+    //         holiday: res.data
+    //       },
+    //       () => {
+    //         holiday = res.data;
+    //         runStart(RealtimeFundcode, RealtimeIndcode);
+    //       }
+    //     );
+    //   }).catch(err => {
+    //     chrome.storage.sync.set({
+    //         holiday: {}
+    //       },
+    //       () => {
+    //         holiday = {};
+    //         runStart(RealtimeFundcode, RealtimeIndcode);
+    //       }
+    //     );
+    //   });
+    // }
   });
 }
 
+// console.log("====getData===")
 // getData();
 
 chrome.contextMenus.create({
@@ -401,13 +410,14 @@ chrome.contextMenus.create({
 })
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type == "DuringDate") {
-    let DuringDate = isDuringDate();
-    sendResponse({
-      farewell: DuringDate
-    });
-  }
+  // if (request.type == "DuringDate") {
+  //   let DuringDate = isDuringDate();
+  //   sendResponse({
+  //     farewell: DuringDate
+  //   });
+  // }
   if (request.type == "refresh") {
+    console.log("=====getData");
     getData();
   }
   if (request.type == "refreshHoliday") {
@@ -528,3 +538,147 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
   }
 });
+
+
+// 初始化websocket
+function initWebSocket() {
+  try {
+    if ("WebSocket" in window) {
+      socket = new WebSocket(wsUrl);
+    } else {
+      console.log("您的浏览器不支持websocket");
+    }
+    socket.onopen = websocketOnOpen;
+    socket.onerror = websocketOnError;
+    socket.onmessage = websocketOnMessage;
+    socket.onclose = websocketClose;
+  } catch (e) {
+    // this.loading = false;
+    this.reconnect();
+  }
+}
+
+/**
+     * 获取K线行情数据
+     * API: https://huobiapi.github.io/docs/spot/v1/cn/#k-2
+     * @param coin { String } 自选币种名称
+     * @param period { String } K线周期	1min, 5min, 15min, 30min, 60min, 4hour, 1day, 1mon, 1week, 1year
+     */
+ function getKline(coin, period = "1day") {
+  //
+  let data = {
+    sub: `market.${coin}usdt.kline.${period}`,
+    id: "id1"
+  };
+
+  socket.send(JSON.stringify(data));
+}
+
+function websocketOnOpen() {
+  // this.loading = false;
+  console.log("WebSocket连接成功", socket.readyState);
+  // 循环订阅每个币种的主题消息d
+  if (socket && coinListM.length) {
+    // console.log(this.coinListM);
+    //列表
+    coinListM.forEach(item => {
+      getKline(item.code);
+    });
+  }
+   //页头
+   seciList.forEach(item => {
+    getKline(item);
+  });
+}
+function websocketOnError(e) {
+  console.log("WebSocket连接发生错误：", e);
+  reconnect();
+}
+
+function blob2json(e, callback) {
+  let reader = new FileReader();
+  reader.readAsArrayBuffer(e, "utf-8");
+  reader.onload = function() {
+    // console.log("blob转ArrayBuffer数据类型", reader.result);
+    // 对数据进行解压
+    let msg = pako.ungzip(reader.result, {
+      to: "string"
+    });
+    // console.log("ArrayBuffer转字符串", msg);
+    callback && callback(JSON.parse(msg));
+  };
+}
+
+// 接收数据并处理
+function websocketOnMessage(e) {
+  blob2json(e.data, res => {
+    // console.log("接收到的数据：", res);
+    if (res.ping) {
+      // 回应心跳包
+      this.socket.send(JSON.stringify(res));
+    }
+    if (res.ch) {
+      // 解析币种
+      const coinName = res.ch.split(".")[1].split("usdt")[0];
+      // 数据缓存到池子中
+      dataPool[coinName] = res;
+      // 初始化时立即更新一次
+      // const coinItem = this.coinListM.filter(
+      //   item => item.code === coinName
+      // )[0];
+      // if (!coinItem.close) {
+      //   console.log("初始化更新", coinName);
+      //   this.updateTableData(res, coinName);
+      // }
+      // 节流 限制1000ms内统一批量更新一次。
+      throttle(() => {
+        // console.log("批量更新数据");
+        setBadge();
+        //  Object.keys(this.dataPool).forEach(item => {
+        //    setBadge(this.dataPool[item], item);
+        //  });
+      }, 1000);
+    }
+  });
+}
+
+function throttle(fn, timeout) {
+  /* 核心技术介绍
+      1. 函数节流需要使用变量来存储  上一次触发时间
+      2. 这个变量如果是局部变量 ： 则函数完毕会被回收。 如果是全局变量：则会造成全局变量污染
+      3.解决方案 ： 利用函数本身也是对象，使用函数本身的静态成员来存储 上一次触发时间
+      */
+  // 给throttle添加静态成员lastTime
+  if (!throttle.lastTime) {
+    /* 为什么一定要有这一步呢？
+            因为函数对象的属性不存在时，默认取值会得到undefined，而undefined在做数学计算
+            的时候会转成number类型得到NaN. Number(undefined) 结果是NaN。无法计算
+             */
+    throttle.lastTime = 0;
+  }
+
+  // 1.记录当前时间
+  const currentTime = new Date().getTime();
+  // 2.判断触发时间间隔
+  if (currentTime - throttle.lastTime > timeout) {
+    fn();
+    // 3.将当前时间作为 下一次触发时间 参考时间
+    throttle.lastTime = currentTime;
+  }
+}
+
+function websocketClose(e) {
+  console.log("connection closed:", e);
+  reconnect();
+}
+
+function reconnect() {
+  console.log("尝试重连");
+  // if (this.lockReconnect || this.maxReconnect <= 0) {
+  //   return;
+  // }
+  setTimeout(() => {
+    // this.maxReconnect-- // 不做限制 连不上一直重连
+    initWebSocket();
+  }, 10 * 1000);
+}

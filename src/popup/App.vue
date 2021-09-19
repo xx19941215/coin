@@ -21,7 +21,7 @@
           :draggable="isEdit"
           class="tab-col indFund"
           :class="drag"
-          :key="el.f12"
+          :key="el.fundcode"
           @click.stop="!isEdit && indDetail(el)"
           @dragstart="handleDragStart($event, el)"
           @dragover.prevent="handleDragOver($event, el)"
@@ -37,12 +37,12 @@
               >✖</span
             >
           </h5>
-          <p :class="el.gsz >= 0 ? 'up' : 'down'">
+          <p :class="el.gszzl >= 0 ? 'up' : 'down'">
             {{ el.gsz
             }}<input
               v-if="isEdit && BadgeContent == 3"
               @click="sltInd(el)"
-              :class="el.f13 + '.' + el.f12 == RealtimeIndcode ? 'slt' : ''"
+              :class="el.code == RealtimeIndcode ? 'slt' : ''"
               class="btn edit"
               style="margin-left:5px"
               value="✔"
@@ -92,7 +92,7 @@
       </div>
       <div v-if="isEdit" class="input-row">
         <span>添加新币:</span>
-        <!-- <input v-model="fundcode" class="btn" type="text" placeholder="请输入基金代码" /> -->
+        <!-- <input v-model="fundcode" class="btn" type="text" placeholder="请输入代币代码" /> -->
         <el-select
           v-model="fundcode"
           multiple
@@ -123,7 +123,7 @@
         <input @click="save" class="btn" type="button" value="确定" />
       </div>
       <!-- <p v-if="isEdit" class="tips center">
-        部分新发基金或QDII基金可以搜索到，但可能无法获取估值情况
+        部分新发代币或QDII代币可以搜索到，但可能无法获取估值情况
       </p> -->
       <div
         v-if="isGetStorage"
@@ -192,7 +192,7 @@
               >
                 持有数量
               </th>
-              <th v-if="isEdit && BadgeContent == 1">特别关注</th>
+              <!-- <th v-if="isEdit && BadgeContent == 1">特别关注</th> -->
               <th v-if="isEdit">删除</th>
             </tr>
           </thead>
@@ -278,7 +278,7 @@
                   type="text"
                 />
               </th>
-              <td v-if="isEdit && BadgeContent == 1">
+              <!-- <td v-if="isEdit && BadgeContent == 1">
                 <input
                   @click="slt(el.fundcode)"
                   :class="el.fundcode == RealtimeFundcode ? 'slt' : ''"
@@ -286,7 +286,7 @@
                   value="✔"
                   type="button"
                 />
-              </td>
+              </td> -->
               <td v-if="isEdit">
                 <input
                   @click="dlt(el.code)"
@@ -300,9 +300,9 @@
         </table>
       </div>
     </div>
-    <p v-if="isEdit" class="tips">
-      特别关注功能介绍：指定一个基金，在程序图标中以角标的形式实时更新，请在设置中选择角标类型与内容。
-    </p>
+    <!-- <p v-if="isEdit" class="tips">
+      特别关注功能介绍：指定一个代币，在程序图标中以角标的形式实时更新，请在设置中选择角标类型与内容。
+    </p> -->
 
     <div v-show="isEdit" class="input-row gear-input-row">
       <el-switch
@@ -334,8 +334,8 @@
     </div>
 
     <div class="input-row">
-      <input class="btn" type="button" @click="market" value="行情中心" />
-      <input
+      <!-- <input class="btn" type="button" @click="market" value="行情中心" /> -->
+      <!-- <input
         class="btn"
         v-if="isDuringDate"
         type="button"
@@ -344,7 +344,7 @@
           isLiveUpdate ? '正在实时更新，点击暂停' : '已暂停，点击切换为实时更新'
         "
         @click="changeLiveUpdate"
-      />
+      /> -->
       <!-- <input class="btn" v-if="!isDuringDate" type="button" value="休市中" /> -->
       <input
         class="btn"
@@ -519,7 +519,7 @@ export default {
       showAmount: false,
       showCost: false,
       showCostRate: false,
-      showGSZ: false,
+      showGSZ: true,
       showKPJ: true,
       fundList: ["001618"],
       coinList: ["btc", "doge"],
@@ -592,8 +592,8 @@ export default {
       sltFund: {},
       sltIndCode: "",
       localVersion: version,
-      BadgeContent: 1,
-      showBadge: 1,
+      BadgeContent: 0,
+      showBadge: 0,
       userId: null,
       loadingInd: false,
       loadingList: false,
@@ -610,7 +610,7 @@ export default {
       allCoinList: [],
       //socket
       dataPool: {}, // 数据缓冲池
-      wsUrl: "wss://api-aws.huobi.pro/ws",
+      wsUrl: "wss://api.huobi.pro/ws",
       lockReconnect: false, // 连接失败不进行重连
       maxReconnect: 5, // 最大重连次数，若连接失败
       socket: null, // websocket实例
@@ -727,11 +727,11 @@ export default {
   methods: {
     refresh() {
       this.initCoin();
-      this.isRefresh = false;
-      // console.log(this.isRefresh);
-      // setTimeout(() => {
-        // this.isRefresh = false;
-      // }, 1500);
+      this.isRefresh = true;
+      console.log(this.isRefresh);
+      setTimeout(() => {
+        this.isRefresh = false;
+      }, 1500);
     },
     formatTooltip(val) {
       return val + "%";
@@ -811,8 +811,10 @@ export default {
           this.showCost = res.showCost ? res.showCost : false;
           this.showCostRate = res.showCostRate ? res.showCostRate : false;
           this.showGSZ = res.showGSZ ? res.showGSZ : false;
-          this.BadgeContent = res.BadgeContent ? res.BadgeContent : 1;
-          this.showBadge = res.showBadge ? res.showBadge : 1;
+          // this.BadgeContent = res.BadgeContent ? res.BadgeContent : 0;
+          this.BadgeContent = 0;
+          //this.showBadge = res.showBadge ? res.showBadge : 1;
+          this.showBadge = 0;
           this.grayscaleValue = res.grayscaleValue ? res.grayscaleValue : 0;
           this.opacityValue = res.opacityValue ? res.opacityValue : 0;
           this.sortTypeObj = res.sortTypeObj ? res.sortTypeObj : {};
@@ -841,6 +843,7 @@ export default {
       );
     },
     initCoin() {
+      this.loadingList = true;
       chrome.storage.sync.get(
         [
           "RealtimeFundcode",
@@ -874,7 +877,7 @@ export default {
             for (const coin of this.coinList) {
               let val = {
                 code: coin,
-                num: coin,
+                num: 0,
               };
               this.coinListM.push(val);
             }
@@ -882,8 +885,8 @@ export default {
               coinListM: this.coinListM,
             });
           }
-          console.log("coinListM");
-          console.log(this.coinListM);
+          // console.log("coinListM");
+          // console.log(this.coinListM);
           if (res.userId) {
             this.userId = res.userId;
           } else {
@@ -949,8 +952,8 @@ export default {
           //组合成Index需要的格式
           const indexCoinList = [];
           // 组合成index需要的数据格式
-          console.log("seciList")
-          console.log(this.seciList)
+          // console.log("seciList")
+          // console.log(this.seciList)
           this.seciList.forEach(item => {
             indexCoinList.push({
               name: item,
@@ -967,7 +970,8 @@ export default {
               num: 0,
               gains: 0,
               costGains: 0,
-              costGainsRate: 0
+              costGainsRate: 0,
+              gszzl: 0
             });
           });
           this.indFundData = indexCoinList;
@@ -993,14 +997,16 @@ export default {
       });
     },
     indDetail(val) {
-      // this.sltIndCode = val.f13 + "." + val.f12;
-      this.detailShadow = true;
-      this.$refs.indDetail.init(val);
+      return;
+      // this.sltIndCode = val.f13 + "." + val.fundcode;
+      // this.detailShadow = true;
+      // this.$refs.indDetail.init(val);
     },
     fundDetail(val) {
-      this.sltFund = val;
-      this.detailShadow = true;
-      this.$refs.fundDetail.init();
+      return;
+      // this.sltFund = val;
+      // this.detailShadow = true;
+      // this.$refs.fundDetail.init();
     },
     closeCharts() {
       this.detailShadow = false;
@@ -1010,26 +1016,26 @@ export default {
       this.$refs.marketShadow.init();
     },
     checkInterval(isFirst) {
-      clearInterval(this.myVar);
-      clearInterval(this.myVar1);
-      chrome.runtime.sendMessage({ type: "DuringDate" }, (response) => {
-        this.isDuringDate = response.farewell;
-        if (this.isLiveUpdate && this.isDuringDate) {
-          if (!isFirst) {
-            this.getIndFundData();
-            this.getData();
-          }
-          this.myVar = setInterval(() => {
-            this.getIndFundData();
-          }, 5 * 1000);
-          this.myVar1 = setInterval(() => {
-            this.getData();
-          }, 60 * 1000);
-        } else {
-          clearInterval(this.myVar);
-          clearInterval(this.myVar1);
-        }
-      });
+      // clearInterval(this.myVar);
+      // clearInterval(this.myVar1);
+      // chrome.runtime.sendMessage({ type: "DuringDate" }, (response) => {
+      //   this.isDuringDate = response.farewell;
+      //   if (this.isLiveUpdate && this.isDuringDate) {
+      //     if (!isFirst) {
+      //       this.getIndFundData();
+      //       this.getData();
+      //     }
+      //     this.myVar = setInterval(() => {
+      //       this.getIndFundData();
+      //     }, 5 * 1000);
+      //     this.myVar1 = setInterval(() => {
+      //       this.getData();
+      //     }, 60 * 1000);
+      //   } else {
+      //     clearInterval(this.myVar);
+      //     clearInterval(this.myVar1);
+      //   }
+      // });
     },
     selectChange() {
       this.searchOptions = [];
@@ -1176,7 +1182,7 @@ export default {
       );
     },
     dltIndFund(ind) {
-      // this.seciList.splice(ind, 1);
+      this.seciList.splice(ind, 1);
       this.indFundData.splice(ind, 1);
       console.log(this.seciList)
       chrome.storage.sync.set(
@@ -1191,7 +1197,7 @@ export default {
     getIndFundData() {
       let seciListStr = this.seciList.join(",");
       let url =
-        "https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&fields=f2,f3,f4,f12,f13,f14&secids=" +
+        "https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&fields=f2,f3,f4,fundcode,f13,f14&secids=" +
         seciListStr +
         "&_=" +
         new Date().getTime();
@@ -1199,83 +1205,6 @@ export default {
         this.loadingInd = false;
         this.indFundData = res.data.data.diff;
       });
-    },
-    getData(type) {
-      let fundlist = this.fundListM.map((val) => val.code).join(",");
-      let url =
-        "https://fundmobapi.eastmoney.com/FundMNewApi/FundMNFInfo?pageIndex=1&pageSize=200&plat=Android&appType=ttjj&product=EFund&Version=1&deviceid=" +
-        this.userId +
-        "&Fcodes=" +
-        fundlist;
-      this.$axios
-        .get(url)
-        .then((res) => {
-          this.loadingList = false;
-          let data = res.data.Datas;
-          this.dataList = [];
-          let dataList = [];
-
-          data.forEach((val) => {
-            let data = {
-              fundcode: val.FCODE,
-              name: val.SHORTNAME,
-              jzrq: val.PDATE,
-              dwjz: isNaN(val.NAV) ? null : val.NAV,
-              gsz: isNaN(val.GSZ) ? null : val.GSZ,
-              gszzl: isNaN(val.GSZZL) ? 0 : val.GSZZL,
-              gztime: val.GZTIME,
-            };
-            if (val.PDATE != "--" && val.PDATE == val.GZTIME.substr(0, 10)) {
-              data.gsz = val.NAV;
-              data.gszzl = isNaN(val.NAVCHGRT) ? 0 : val.NAVCHGRT;
-              data.hasReplace = true;
-            }
-
-            let slt = this.fundListM.filter(
-              (item) => item.code == data.fundcode
-            );
-            data.num = slt[0].num;
-            data.cost = slt[0].cost;
-            data.amount = this.calculateMoney(data);
-            data.gains = this.calculate(data, data.hasReplace);
-            data.costGains = this.calculateCost(data);
-            data.costGainsRate = this.calculateCostRate(data);
-
-            if (data.fundcode == this.RealtimeFundcode) {
-              if (this.showBadge == 1) {
-                if (this.BadgeContent == 1) {
-                  chrome.runtime.sendMessage({
-                    type: "refreshBadge",
-                    data: data,
-                  });
-                }
-              }
-            }
-
-            dataList.push(data);
-          });
-          if (this.showBadge == 1) {
-            if (this.BadgeContent == 2) {
-              chrome.runtime.sendMessage({
-                type: "refreshBadgeAllGains",
-                data: data,
-              });
-            }
-          }
-
-          this.dataListDft = [...dataList];
-          if (type == "add") {
-            this.dataList = dataList;
-          } else if (this.sortTypeObj.type != "none") {
-            this.sortType[this.sortTypeObj.name] = this.sortTypeObj.type;
-            this.dataList = dataList.sort(
-              this.compare(this.sortTypeObj.name, this.sortTypeObj.type)
-            );
-          } else {
-            this.dataList = dataList;
-          }
-        })
-        .catch((error) => {});
     },
     changeNum(item, ind) {
       debounce(() => {
@@ -1305,6 +1234,8 @@ export default {
     updateTableData(res, coinName) {
       // 更新数据
       // console.log(this.isRefresh);
+      this.loadingList = false;
+      if (this.isEdit) return;
       this.dataCoinList.some(item => {
         if (item.code === coinName) {
           const {
@@ -1347,7 +1278,7 @@ export default {
               (v) => v.code == item.code
           );
 
-          item.num = slt[0].num;
+          item.num = slt[0].num ? slt[0].num : 0;
           item.cost = slt[0].cost;
           item.amount = this.calculateMoney(item);
           item.gains = this.calculate(item, false);
@@ -1370,6 +1301,7 @@ export default {
     updateIndexData(res, coinName) {
       // 更新数据
       // console.log(this.isRefresh);
+      this.loadingInd = false;
       this.indFundData.some(item => {
         if (item.code === coinName) {
           const {
@@ -1408,6 +1340,8 @@ export default {
             NP.round(NP.divide(NP.minus(close, open), open), 4),
             100
           );
+
+          // item.gszzl = isNaN(item.gszzl) ? 0 :  item.gszzl;
           return true;
         }
         return false;
@@ -1499,7 +1433,8 @@ export default {
       this.initCoin();
     },
     sltInd(val) {
-      let code = val.f13 + "." + val.f12;
+      // let code = val.f13 + "." + val.fundcode;
+      let code = val.fundcode;
       if (code == this.RealtimeIndcode) {
         chrome.storage.sync.set(
           {
@@ -1507,6 +1442,7 @@ export default {
           },
           () => {
             this.RealtimeIndcode = null;
+            console.log("endInterval");
             chrome.runtime.sendMessage({ type: "endInterval" });
           }
         );
@@ -1517,6 +1453,7 @@ export default {
           },
           () => {
             this.RealtimeIndcode = code;
+            console.log("refresh");
             chrome.runtime.sendMessage({ type: "refresh" });
           }
         );
@@ -1592,7 +1529,7 @@ export default {
           },
           () => {}
         );
-      } else if (item.f12) {
+      } else if (item.fundcode) {
         chrome.storage.sync.set(
           {
             seciList: this.seciList,
@@ -1602,7 +1539,7 @@ export default {
       }
     },
     handleDragEnter(e, item, index) {
-      // 基金排序
+      // 代币排序
       if (this.dragging && this.dragging.fundcode && item.fundcode) {
         e.dataTransfer.effectAllowed = "move";
         if (item.fundcode === this.dragging.fundcode) {
@@ -1626,26 +1563,26 @@ export default {
         );
         newDataItems.splice(dataDst, 0, ...newDataItems.splice(dataSrc, 1));
         this.dataList = newDataItems;
-      } else if (this.dragging && this.dragging.f12 && item.f12) {
+      } else if (this.dragging && this.dragging.fundcode && item.fundcode) {
         e.dataTransfer.effectAllowed = "move";
-        if (item.f12 === this.dragging.f12) {
+        if (item.fundcode === this.dragging.fundcode) {
           return;
         }
         const newIndItems = [...this.seciList];
         const indSrc = newIndItems.findIndex(
-          (n) => n.split(".")[1] == this.dragging.f12
+          (n) => n.split(".")[1] == this.dragging.fundcode
         );
         const indDst = newIndItems.findIndex(
-          (n) => n.split(".")[1] == item.f12
+          (n) => n.split(".")[1] == item.fundcode
         );
         newIndItems.splice(indDst, 0, ...newIndItems.splice(indSrc, 1));
         this.seciList = newIndItems;
 
         const newIndDataItems = [...this.indFundData];
         const indDataSrc = newIndDataItems.findIndex(
-          (n) => n.f12 == this.dragging.f12
+          (n) => n.fundcode == this.dragging.fundcode
         );
-        const indDataDst = newIndDataItems.findIndex((n) => n.f12 == item.f12);
+        const indDataDst = newIndDataItems.findIndex((n) => n.fundcode == item.fundcode);
         newIndDataItems.splice(
           indDataDst,
           0,
@@ -1668,6 +1605,8 @@ export default {
       try {
         if ("WebSocket" in window) {
           this.loading = true;
+          this.loadingList = true;
+          this.loadingInd = true;
           this.socket = new WebSocket(this.wsUrl);
         } else {
           console.log("您的浏览器不支持websocket");
@@ -1716,13 +1655,13 @@ export default {
           // 数据缓存到池子中
           this.dataPool[coinName] = res;
           // 初始化时立即更新一次
-          // const coinItem = this.coinListM.filter(
-          //   item => item.code === coinName
-          // )[0];
-          // if (!coinItem.close) {
-          //   console.log("初始化更新", coinName);
-          //   this.updateTableData(res, coinName);
-          // }
+          const coinItem = this.coinListM.filter(
+            item => item.code === coinName
+          )[0];
+          if (!coinItem) {
+            // console.log("初始化更新", coinName);
+            this.updateTableData(res, coinName);
+          }
           // 节流 限制1000ms内统一批量更新一次。
           throttle(() => {
             // console.log("批量更新数据");

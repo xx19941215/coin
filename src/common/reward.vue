@@ -12,20 +12,20 @@
           @click="checked = 'alipay'"
           :class="checked == 'alipay' ? 'checked' : ''"
         >
-          支付宝
+          TRC20
         </button>
       </div>
       <div class="qrcode">
         <img
           :src="
             checked == 'wepay'
-              ? './../icons/qrcode/wepay.png'
-              : './../icons/qrcode/alipay.png'
+              ? './../icons/qrcode/wepay.jpeg'
+              : './../icons/qrcode/trc20.jpeg'
           "
         />
       </div>
       <p class="tips reward-tips">
-        感谢有您的支持，自选基金才能一直保持更新，增加更多功能。
+        感谢有您的支持，实时行情才能一直保持更新，增加更多功能。
       </p>
       <div class="tab-row">
         <input

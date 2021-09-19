@@ -30,7 +30,7 @@
             ref="third"
           ></charts2>
         </el-tab-pane>
-        <el-tab-pane lazy label="基金概况" name="info">
+        <el-tab-pane lazy label="代币概况" name="info">
           <fund-info
             :darkMode="darkMode"
             :fund="fund"
