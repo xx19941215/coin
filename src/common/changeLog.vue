@@ -13,7 +13,7 @@
   >
     <div v-if="netError" class="btn-row">
       网络不好？
-      <el-button type="primary" @click="goGitee">去官网查看</el-button>
+      <el-button type="primary" @click="goGitee">科学上网试试！</el-button>
     </div>
     <div
       class="content"
@@ -102,7 +102,8 @@ export default {
   mounted() {},
   methods: {
     goGitee() {
-      window.open("http://rabt.gitee.io/funds/docs/dist/index.html#/ChangeLog");
+      return;
+      //window.open("http://rabt.gitee.io/funds/docs/dist/index.html#/ChangeLog");
     },
     getChangelog() {
       this.loading = true;
