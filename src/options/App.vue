@@ -80,7 +80,7 @@
             </el-switch>
           </div>
           <div class="select-row">
-            <span>显示持有金额</span>
+            <span>显示持有价值</span>
             <el-switch
               v-model="showAmount"
               @change="changeOption($event, 'showAmount')"
@@ -88,7 +88,7 @@
             </el-switch>
           </div>
           <div class="select-row">
-            <span>显示估值收益</span>
+            <span>显示估算收益</span>
             <el-switch
               v-model="showGains"
               @change="changeOption($event, 'showGains')"
@@ -173,7 +173,7 @@
         <li>
           <div class="list-title">请作者喝杯咖啡</div>
           <p style="line-height:34px">
-            开源不易，本插件是一个完全开源的项目，也衍生出许多同类产品，您的支持是对作者最大的鼓励。如果你觉得此插件对你有所帮助，或者想要支持一下我<input
+            开源不易，本插件是一个完全开源的项目，您的支持是对作者最大的鼓励。如果你觉得此插件对你有所帮助，或者想要支持一下我<input
               class="btn primary"
               type="button"
               title="φ(>ω<*)"
@@ -246,17 +246,21 @@
               value="更新日志"
               @click="changelog"
             />
-            <input
+            <!-- <input
               class="btn"
               type="button"
               value="插件主页"
               @click="openHomePage"
-            />
+            /> -->
           </p>
           <p style="line-height:34px">
-            电报群：https://t.me/choose_funds_chat
+            电报群：https://t.me/joinchat/c5RvS6yyxqQ2YWQx
             <input class="btn" type="button" value="点击跳转" @click="openTG" />
           </p>
+          <p style="line-height:34px">本插件基于自选基金助手开发，再次感谢原作者
+            <input class="btn" type="button" value="点击跳转" @click="openFunds" />
+          </p>
+
           <change-log
             @close="closeChangelog"
             :darkMode="darkMode"
@@ -577,14 +581,17 @@ export default {
       window.open("https://x2rr.github.io/funds/holiday.json");
     },
     openGithub() {
-      window.open("https://github.com/x2rr/funds");
+      window.open("https://github.com/xx19941215/coin");
     },
     openTG() {
-      window.open("https://t.me/choose_funds_chat");
+      window.open("https://github.com/x2rr/funds");
     },
-    openHomePage() {
-      window.open("http://rabt.gitee.io/funds/docs/dist/index.html");
+    openFunds() {
+      window.open("https://github.com/x2rr/funds");
     },
+    // openHomePage() {
+    //   window.open("http://rabt.gitee.io/funds/docs/dist/index.html");
+    // },
     reward(data) {
       this.$refs.reward.init();
     },

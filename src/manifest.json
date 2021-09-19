@@ -1,7 +1,7 @@
 {
-  "author": "LiuRabt",
+  "author": "xiaoxiao",
   "name": "实时行情助手火币版 - 实时查看代币涨跌幅",
-  "description": "实时查看您关注的代币，助您快速获取实时数据",
+  "description": "实时查看您关注的代币，计算持有收益率",
   "version": null,
   "manifest_version": 2,
   "icons": {
@@ -9,7 +9,7 @@
     "48": "icons/icon16.png",
     "128": "icons/icon128.png"
   },
-  "homepage_url": "http://rabt.gitee.io/funds/docs/dist/index.html",
+  "homepage_url": "https://github.com/xx19941215/coin",
   "browser_action": {
     "default_icon": {
       "19": "icons/icon16.png",
@@ -32,7 +32,6 @@
   "content_security_policy": "script-src 'self' 'unsafe-eval' https://jic.talkingdata.com; object-src 'self'",
   "permissions": [
     "storage",
-    "contextMenus",
-    "wss://*.api-aws.huobi.pro/*"
+    "contextMenus"
   ]
 }

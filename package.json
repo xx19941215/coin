@@ -1,8 +1,8 @@
 {
-  "name": "choose-funds",
+  "name": "choose-coin",
   "version": "1.0.0",
   "description": "A Vue.js web extension",
-  "author": "LiuRabt",
+  "author": "xiaoxiao",
   "license": "GPL-3.0",
   "engines": {
     "node": ">=10"
